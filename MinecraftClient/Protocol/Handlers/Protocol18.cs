@@ -22,6 +22,7 @@ using System.Text.RegularExpressions;
 using MinecraftClient.Protocol.Session;
 using System.Collections.Concurrent;
 using MinecraftClient.Protocol.Message;
+using MinecraftClient.Commands;
 
 namespace MinecraftClient.Protocol.Handlers
 {
@@ -41,10 +42,12 @@ namespace MinecraftClient.Protocol.Handlers
         internal const int MC_1_9_Version = 107;
         internal const int MC_1_9_1_Version = 108;
         internal const int MC_1_10_Version = 210;
+        internal const int MC_1_11_Version = 315;
         internal const int MC_1_11_2_Version = 316;
         internal const int MC_1_12_Version = 335;
         internal const int MC_1_12_2_Version = 340;
         internal const int MC_1_13_Version = 393;
+        internal const int MC_1_13_2_Version = 404;
         internal const int MC_1_14_Version = 477;
         internal const int MC_1_15_Version = 573;
         internal const int MC_1_15_2_Version = 578;
@@ -108,12 +111,12 @@ namespace MinecraftClient.Protocol.Handlers
                 handler.SetTerrainEnabled(false);
             }
 
-            if (handler.GetInventoryEnabled() && (protocolVersion < MC_1_10_Version || protocolVersion > MC_1_19_2_Version))
+            if (handler.GetInventoryEnabled() && (protocolVersion < MC_1_8_Version || protocolVersion > MC_1_19_2_Version))
             {
                 log.Error(Translations.Get("extra.inventory_disabled"));
                 handler.SetInventoryEnabled(false);
             }
-            if (handler.GetEntityHandlingEnabled() && (protocolVersion < MC_1_10_Version || protocolVersion > MC_1_19_2_Version))
+            if (handler.GetEntityHandlingEnabled() && (protocolVersion < MC_1_8_Version || protocolVersion > MC_1_19_2_Version))
             {
                 log.Error(Translations.Get("extra.entity_disabled"));
                 handler.SetEntityHandlingEnabled(false);
@@ -1313,6 +1316,7 @@ namespace MinecraftClient.Protocol.Handlers
                             if (handler.GetEntityHandlingEnabled())
                             {
                                 int entityid = dataTypes.ReadNextVarInt(packetData);
+
                                 if (protocolVersion >= MC_1_16_Version)
                                 {
                                     bool hasNext;
@@ -1328,7 +1332,12 @@ namespace MinecraftClient.Protocol.Handlers
                                 }
                                 else
                                 {
-                                    int slot2 = dataTypes.ReadNextVarInt(packetData);
+                                    int slot2;
+
+                                    if (protocolVersion < MC_1_9_Version)
+                                        slot2 = dataTypes.ReadNextShort(packetData);
+                                    else slot2 = dataTypes.ReadNextVarInt(packetData);
+
                                     Item item = dataTypes.ReadNextItemSlot(packetData, itemPalette);
                                     handler.OnEntityEquipment(entityid, slot2, item);
                                 }
@@ -1405,13 +1414,27 @@ namespace MinecraftClient.Protocol.Handlers
                             if (handler.GetEntityHandlingEnabled())
                             {
                                 int EntityID = dataTypes.ReadNextVarInt(packetData);
-                                Double DeltaX = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
-                                Double DeltaY = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
-                                Double DeltaZ = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+
+                                Double DeltaX, DeltaY, DeltaZ;
+
+                                if (protocolVersion < MC_1_9_Version)
+                                {
+                                    DeltaX = Convert.ToDouble(dataTypes.ReadNextByte(packetData));
+                                    DeltaY = Convert.ToDouble(dataTypes.ReadNextByte(packetData));
+                                    DeltaZ = Convert.ToDouble(dataTypes.ReadNextByte(packetData));
+                                }
+                                else
+                                {
+                                    DeltaX = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                                    DeltaY = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                                    DeltaZ = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                                }
+
                                 bool OnGround = dataTypes.ReadNextBool(packetData);
                                 DeltaX = DeltaX / (128 * 32);
                                 DeltaY = DeltaY / (128 * 32);
                                 DeltaZ = DeltaZ / (128 * 32);
+
                                 handler.OnEntityPosition(EntityID, DeltaX, DeltaY, DeltaZ, OnGround);
                             }
                             break;
@@ -1419,15 +1442,30 @@ namespace MinecraftClient.Protocol.Handlers
                             if (handler.GetEntityHandlingEnabled())
                             {
                                 int EntityID = dataTypes.ReadNextVarInt(packetData);
-                                Double DeltaX = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
-                                Double DeltaY = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
-                                Double DeltaZ = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+
+                                Double DeltaX, DeltaY, DeltaZ;
+
+                                if (protocolVersion < MC_1_9_Version)
+                                {
+                                    DeltaX = Convert.ToDouble(dataTypes.ReadNextByte(packetData));
+                                    DeltaY = Convert.ToDouble(dataTypes.ReadNextByte(packetData));
+                                    DeltaZ = Convert.ToDouble(dataTypes.ReadNextByte(packetData));
+                                }
+                                else
+                                {
+                                    DeltaX = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                                    DeltaY = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                                    DeltaZ = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                                }
+
+
                                 byte _yaw = dataTypes.ReadNextByte(packetData);
                                 byte _pitch = dataTypes.ReadNextByte(packetData);
                                 bool OnGround = dataTypes.ReadNextBool(packetData);
                                 DeltaX = DeltaX / (128 * 32);
                                 DeltaY = DeltaY / (128 * 32);
                                 DeltaZ = DeltaZ / (128 * 32);
+
                                 handler.OnEntityPosition(EntityID, DeltaX, DeltaY, DeltaZ, OnGround);
                             }
                             break;
@@ -1514,9 +1552,22 @@ namespace MinecraftClient.Protocol.Handlers
                             if (handler.GetEntityHandlingEnabled())
                             {
                                 int EntityID = dataTypes.ReadNextVarInt(packetData);
-                                Double X = dataTypes.ReadNextDouble(packetData);
-                                Double Y = dataTypes.ReadNextDouble(packetData);
-                                Double Z = dataTypes.ReadNextDouble(packetData);
+
+                                Double X, Y, Z;
+
+                                if (protocolVersion < MC_1_9_Version)
+                                {
+                                    X = Convert.ToDouble(dataTypes.ReadNextInt(packetData));
+                                    Y = Convert.ToDouble(dataTypes.ReadNextInt(packetData));
+                                    Z = Convert.ToDouble(dataTypes.ReadNextInt(packetData));
+                                }
+                                else
+                                {
+                                    X = dataTypes.ReadNextDouble(packetData);
+                                    Y = dataTypes.ReadNextDouble(packetData);
+                                    Z = dataTypes.ReadNextDouble(packetData);
+                                }
+
                                 byte EntityYaw = dataTypes.ReadNextByte(packetData);
                                 byte EntityPitch = dataTypes.ReadNextByte(packetData);
                                 bool OnGround = dataTypes.ReadNextBool(packetData);
@@ -2618,7 +2669,27 @@ namespace MinecraftClient.Protocol.Handlers
         public bool SendPlayerBlockPlacement(int hand, Location location, Direction face, int sequenceId)
         {
             if (protocolVersion < MC_1_14_Version)
-                return false; // NOT IMPLEMENTED for older MC versions
+            {
+                Container? playerInventory = handler.GetInventory(0);
+
+                if (playerInventory == null)
+                    return false;
+
+                List<byte> packet = new List<byte>();
+
+                packet.AddRange(dataTypes.GetLocation(location));
+                packet.Add(dataTypes.GetBlockFace(face));
+
+                Item item = playerInventory.Items[((McClient)handler).GetCurrentSlot()];
+                packet.AddRange(dataTypes.GetItemSlot(item, itemPalette));
+
+                packet.Add((byte)0); // cursorX
+                packet.Add((byte)0); // cursorY
+                packet.Add((byte)0); // cursorZ
+
+                SendPacket(PacketTypesOut.PlayerBlockPlacement, packet);
+                return true;
+            }
             try
             {
                 List<byte> packet = new List<byte>();

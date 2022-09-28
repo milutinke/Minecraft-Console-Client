@@ -6,12 +6,12 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
     {
         private Dictionary<int, PacketTypesIn> typeIn = new Dictionary<int, PacketTypesIn>()
         {
-            { 0x00, PacketTypesIn.SpawnEntity },                // Changed in 1.19 (Wiki name: Spawn Entity) - DONE
+            { 0x00, PacketTypesIn.SpawnEntity },                // Changed in 1.19 (Wiki name: Spawn Entity)
             { 0x01, PacketTypesIn.SpawnExperienceOrb },         // (Wiki name: Spawn Exeprience Orb)
             { 0x02, PacketTypesIn.SpawnPlayer },                //
             { 0x03, PacketTypesIn.EntityAnimation },            // (Wiki name: Entity Animation (clientbound))
             { 0x04, PacketTypesIn.Statistics },                 // (Wiki name: Award Statistics)
-            { 0x05, PacketTypesIn.BlockChangedAck },            // Added 1.19 (Wiki name: Acknowledge Block Change) - DONE 
+            { 0x05, PacketTypesIn.BlockChangedAck },            // Added 1.19 (Wiki name: Acknowledge Block Change) 
             { 0x06, PacketTypesIn.BlockBreakAnimation },        // (Wiki name: Set Block Destroy Stage)
             { 0x07, PacketTypesIn.BlockEntityData },            //
             { 0x08, PacketTypesIn.BlockAction },                //
@@ -28,10 +28,10 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             { 0x13, PacketTypesIn.SetSlot },                    // (Wiki name: Set Container Slot)
             { 0x14, PacketTypesIn.SetCooldown },                //
             { 0x15, PacketTypesIn.PluginMessage },              // (Wiki name: Plugin Message (clientbound))
-            { 0x16, PacketTypesIn.NamedSoundEffect },           // Changed in 1.19 (Added "Speed" field) (Wiki name: Custom Sound Effect) - DONE (No need to be implemented)
+            { 0x16, PacketTypesIn.NamedSoundEffect },           // Changed in 1.19 (Added "Speed" field) (Wiki name: Custom Sound Effect) (No need to be implemented)
             { 0x17, PacketTypesIn.Disconnect },                 //
             { 0x18, PacketTypesIn.EntityStatus },               // (Wiki name: Entity Event)
-            { 0x19, PacketTypesIn.Explosion },                  // Changed in 1.19 (Location fields are now Double instead of Float) (Wiki name: Explosion) - DONE
+            { 0x19, PacketTypesIn.Explosion },                  // Changed in 1.19 (Location fields are now Double instead of Float) (Wiki name: Explosion)
             { 0x1A, PacketTypesIn.UnloadChunk },                // (Wiki name: Forget Chunk)
             { 0x1B, PacketTypesIn.ChangeGameState },            // (Wiki name: Game Event)
             { 0x1C, PacketTypesIn.OpenHorseWindow },            // (Wiki name: Horse Screen Open)
@@ -39,9 +39,9 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             { 0x1E, PacketTypesIn.KeepAlive },                  //
             { 0x1F, PacketTypesIn.ChunkData },                  //
             { 0x20, PacketTypesIn.Effect },                     // (Wiki name: Level Event)
-            { 0x21, PacketTypesIn.Particle },                   // Changed in 1.19 ("Particle Data" field is now "Max Speed", it's the same Float data type) (Wiki name: Level Particle) - DONE (No need to be implemented)
+            { 0x21, PacketTypesIn.Particle },                   // Changed in 1.19 ("Particle Data" field is now "Max Speed", it's the same Float data type) (Wiki name: Level Particle) (No need to be implemented)
             { 0x22, PacketTypesIn.UpdateLight },                // (Wiki name: Light Update)
-            { 0x23, PacketTypesIn.JoinGame },                   // Changed in 1.19 (lot's of changes) (Wiki name: Login (play)) - DONE
+            { 0x23, PacketTypesIn.JoinGame },                   // Changed in 1.19 (lot's of changes) (Wiki name: Login (play))
             { 0x24, PacketTypesIn.MapData },                    // (Wiki name: Map Item Data)
             { 0x25, PacketTypesIn.TradeList },                  // (Wiki name: Merchant Offers)
             { 0x26, PacketTypesIn.EntityPosition },             // (Wiki name: Move Entity Position)
@@ -58,14 +58,14 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             { 0x31, PacketTypesIn.EndCombatEvent },             // (Wiki name: Player Combat End)
             { 0x32, PacketTypesIn.EnterCombatEvent },           // (Wiki name: Player Combat Enter)
             { 0x33, PacketTypesIn.DeathCombatEvent },           // (Wiki name: Player Combat Kill)
-            { 0x34, PacketTypesIn.PlayerInfo },                 // Changed in 1.19 (Heavy changes) - DONE
+            { 0x34, PacketTypesIn.PlayerInfo },                 // Changed in 1.19 (Heavy changes)
             { 0x35, PacketTypesIn.FacePlayer },                 // (Wiki name: Player Look At)
             { 0x36, PacketTypesIn.PlayerPositionAndLook },      // (Wiki name: Player Position)
             { 0x37, PacketTypesIn.UnlockRecipes },              // (Wiki name: Recipe)
             { 0x38, PacketTypesIn.DestroyEntities },            // (Wiki name: Remove Entites)
             { 0x39, PacketTypesIn.RemoveEntityEffect },         //
             { 0x3A, PacketTypesIn.ResourcePackSend },           // (Wiki name: Resource Pack)
-            { 0x3B, PacketTypesIn.Respawn },                    // Changed in 1.19 (Heavy changes) - DONE
+            { 0x3B, PacketTypesIn.Respawn },                    // Changed in 1.19 (Heavy changes)
             { 0x3C, PacketTypesIn.EntityHeadLook },             // (Wiki name: Rotate Head)
             { 0x3D, PacketTypesIn.MultiBlockChange },           // (Wiki name: Sections Block Update)
             { 0x3E, PacketTypesIn.SelectAdvancementTab },       //
@@ -99,7 +99,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             { 0x5A, PacketTypesIn.SetTitleText },               // (Wiki name: Set Title)
             { 0x5B, PacketTypesIn.SetTitleTime },               // (Wiki name: Set Titles Animation)
             { 0x5C, PacketTypesIn.EntitySoundEffect },          // (Wiki name: Sound Entity)
-            { 0x5D, PacketTypesIn.SoundEffect },                // Changed in 1.19 (Added "Seed" field) (Wiki name: Sound Effect) - DONE (No need to be implemented)
+            { 0x5D, PacketTypesIn.SoundEffect },                // Changed in 1.19 (Added "Seed" field) (Wiki name: Sound Effect) (No need to be implemented)
             { 0x5E, PacketTypesIn.StopSound },                  //
             { 0x5F, PacketTypesIn.SystemChat },                 // Added in 1.19 (Wiki name: System Chat Message)
             { 0x60, PacketTypesIn.PlayerListHeaderAndFooter },  // (Wiki name: Tab List)
@@ -108,7 +108,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             { 0x63, PacketTypesIn.EntityTeleport },             // (Wiki name: Teleport Entity)
             { 0x64, PacketTypesIn.Advancements },               // (Wiki name: Update Advancements)
             { 0x65, PacketTypesIn.EntityProperties },           // (Wiki name: Update Attributes)
-            { 0x66, PacketTypesIn.EntityEffect },               // Changed in 1.19 (Added "Has Factor Data" and "Factor Codec" fields) (Wiki name: Entity Effect) - DONE
+            { 0x66, PacketTypesIn.EntityEffect },               // Changed in 1.19 (Added "Has Factor Data" and "Factor Codec" fields) (Wiki name: Entity Effect)
             { 0x67, PacketTypesIn.DeclareRecipes },             // (Wiki name: Update Recipes)
             { 0x68, PacketTypesIn.Tags },                       // (Wiki name: Update Tags)
         };
@@ -143,7 +143,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             { 0x19, PacketTypesOut.PickItem },                    //
             { 0x1A, PacketTypesOut.CraftRecipeRequest },          // (Wiki name: Place recipe)
             { 0x1B, PacketTypesOut.PlayerAbilities },             //
-            { 0x1C, PacketTypesOut.PlayerDigging },               // Changed in 1.19 (Added a "Sequence" field) (Wiki name: Player Action) - DONE
+            { 0x1C, PacketTypesOut.PlayerDigging },               // Changed in 1.19 (Added a "Sequence" field) (Wiki name: Player Action)
             { 0x1D, PacketTypesOut.EntityAction },                // (Wiki name: Player Command)
             { 0x1E, PacketTypesOut.SteerVehicle },                // (Wiki name: Player Input)
             { 0x1F, PacketTypesOut.Pong },                        // (Wiki name: Pong (play))
@@ -153,7 +153,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             { 0x23, PacketTypesOut.ResourcePackStatus },          // (Wiki name: Resource Pack (serverbound))
             { 0x24, PacketTypesOut.AdvancementTab },              // (Wiki name: Seen Advancements)
             { 0x25, PacketTypesOut.SelectTrade },                 //
-            { 0x26, PacketTypesOut.SetBeaconEffect },             // Changed in 1.19 (Added a "Secondary Effect Present" and "Secondary Effect" fields) (Wiki name: Set Beacon) - DONE - (No need to be implemented)
+            { 0x26, PacketTypesOut.SetBeaconEffect },             // Changed in 1.19 (Added a "Secondary Effect Present" and "Secondary Effect" fields) (Wiki name: Set Beacon) - (No need to be implemented)
             { 0x27, PacketTypesOut.HeldItemChange },              // (Wiki name: Set Carried Item (serverbound))
             { 0x28, PacketTypesOut.UpdateCommandBlock },          // (Wiki name: Set Command Block)
             { 0x29, PacketTypesOut.UpdateCommandBlockMinecart },  //
@@ -163,8 +163,8 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             { 0x2D, PacketTypesOut.UpdateSign },                  // (Wiki name: Sign Update)
             { 0x2E, PacketTypesOut.Animation },                   // (Wiki name: Swing)
             { 0x2F, PacketTypesOut.Spectate },                    // (Wiki name: Teleport To Entity)
-            { 0x30, PacketTypesOut.PlayerBlockPlacement },        // Changed in 1.19 (Added a "Sequence" field) (Wiki name: Use Item On) - DONE
-            { 0x31, PacketTypesOut.UseItem },                     // Changed in 1.19 (Added a "Sequence" field) (Wiki name: Use Item) - DONE
+            { 0x30, PacketTypesOut.PlayerBlockPlacement },        // Changed in 1.19 (Added a "Sequence" field) (Wiki name: Use Item On)
+            { 0x31, PacketTypesOut.UseItem },                     // Changed in 1.19 (Added a "Sequence" field) (Wiki name: Use Item)
         };
 
         protected override Dictionary<int, PacketTypesIn> GetListIn()
