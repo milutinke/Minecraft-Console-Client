@@ -728,7 +728,7 @@ namespace MinecraftClient
             if (!String.IsNullOrEmpty(errorMessage))
             {
                 ConsoleIO.Reset();
-                while (Console.KeyAvailable)
+                while (Console.IsInputRedirected && Console.KeyAvailable)
                     Console.ReadKey(true);
                 ConsoleIO.WriteLine(errorMessage);
 
