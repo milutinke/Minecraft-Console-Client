@@ -48,27 +48,33 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
 
         public PacketTypePalette()
         {
+            // Cache subclass dictionary results to avoid redundant virtual calls
+            var listIn = GetListIn();
+            var listOut = GetListOut();
+            var configListIn = GetConfigurationListIn();
+            var configListOut = GetConfigurationListOut();
+
             // Freeze forward-lookup dictionaries for per-packet hot-path reads
-            frozenListIn = GetListIn().ToFrozenDictionary();
-            frozenListOut = GetListOut().ToFrozenDictionary();
-            frozenConfigListIn = GetConfigurationListIn().ToFrozenDictionary();
-            frozenConfigListOut = GetConfigurationListOut().ToFrozenDictionary();
+            frozenListIn = listIn.ToFrozenDictionary();
+            frozenListOut = listOut.ToFrozenDictionary();
+            frozenConfigListIn = configListIn.ToFrozenDictionary();
+            frozenConfigListOut = configListOut.ToFrozenDictionary();
 
             // Build and freeze reverse mappings
             var revIn = new Dictionary<PacketTypesIn, int>();
-            foreach (var p in GetListIn())
+            foreach (var p in listIn)
                 revIn.Add(p.Value, p.Key);
 
             var revOut = new Dictionary<PacketTypesOut, int>();
-            foreach (var p in GetListOut())
+            foreach (var p in listOut)
                 revOut.Add(p.Value, p.Key);
 
             var revConfigIn = new Dictionary<ConfigurationPacketTypesIn, int>();
-            foreach (var p in GetConfigurationListIn())
+            foreach (var p in configListIn)
                 revConfigIn.Add(p.Value, p.Key);
 
             var revConfigOut = new Dictionary<ConfigurationPacketTypesOut, int>();
-            foreach (var p in GetConfigurationListOut())
+            foreach (var p in configListOut)
                 revConfigOut.Add(p.Value, p.Key);
 
             reverseMappingIn = revIn.ToFrozenDictionary();

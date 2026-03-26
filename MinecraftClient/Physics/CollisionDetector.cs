@@ -196,15 +196,17 @@ namespace MinecraftClient.Physics
         /// </summary>
         private static void CollectCandidateStepHeights(Aabb stepBase, List<Aabb> colliders, float maxUpStep, float currentY, List<float> heights)
         {
-            for (int i = 0; i < colliders.Count; i++)
+            int colliderCount = colliders.Count;
+            for (int i = 0; i < colliderCount; i++)
             {
                 float h = (float)(colliders[i].MaxY - stepBase.MinY);
                 if (h > currentY && h <= maxUpStep)
                 {
                     // Insert-sorted, skip duplicates
-                    int insertIdx = heights.Count;
+                    int heightCount = heights.Count;
+                    int insertIdx = heightCount;
                     bool duplicate = false;
-                    for (int j = 0; j < heights.Count; j++)
+                    for (int j = 0; j < heightCount; j++)
                     {
                         if (heights[j] == h) { duplicate = true; break; }
                         if (heights[j] > h) { insertIdx = j; break; }
