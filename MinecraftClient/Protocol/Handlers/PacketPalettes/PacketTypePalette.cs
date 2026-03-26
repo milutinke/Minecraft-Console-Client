@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Frozen;
+using System.Collections.Generic;
 
 namespace MinecraftClient.Protocol.Handlers.PacketPalettes
 {
@@ -32,27 +33,48 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
         protected abstract Dictionary<int, ConfigurationPacketTypesIn> GetConfigurationListIn();
         protected abstract Dictionary<int, ConfigurationPacketTypesOut> GetConfigurationListOut();
 
-        private readonly Dictionary<PacketTypesIn, int> reverseMappingIn = new();
-        private readonly Dictionary<PacketTypesOut, int> reverseMappingOut = new();
+        // Frozen for optimal read performance on per-packet lookup paths
+        private readonly FrozenDictionary<int, PacketTypesIn> frozenListIn;
+        private readonly FrozenDictionary<int, PacketTypesOut> frozenListOut;
+        private readonly FrozenDictionary<int, ConfigurationPacketTypesIn> frozenConfigListIn;
+        private readonly FrozenDictionary<int, ConfigurationPacketTypesOut> frozenConfigListOut;
 
-        private readonly Dictionary<ConfigurationPacketTypesIn, int> configurationReverseMappingIn = new();
-        private readonly Dictionary<ConfigurationPacketTypesOut, int> configurationReverseMappingOut = new();
+        private readonly FrozenDictionary<PacketTypesIn, int> reverseMappingIn;
+        private readonly FrozenDictionary<PacketTypesOut, int> reverseMappingOut;
+        private readonly FrozenDictionary<ConfigurationPacketTypesIn, int> configurationReverseMappingIn;
+        private readonly FrozenDictionary<ConfigurationPacketTypesOut, int> configurationReverseMappingOut;
 
         private bool forgeEnabled = false;
 
         public PacketTypePalette()
         {
+            // Freeze forward-lookup dictionaries for per-packet hot-path reads
+            frozenListIn = GetListIn().ToFrozenDictionary();
+            frozenListOut = GetListOut().ToFrozenDictionary();
+            frozenConfigListIn = GetConfigurationListIn().ToFrozenDictionary();
+            frozenConfigListOut = GetConfigurationListOut().ToFrozenDictionary();
+
+            // Build and freeze reverse mappings
+            var revIn = new Dictionary<PacketTypesIn, int>();
             foreach (var p in GetListIn())
-                reverseMappingIn.Add(p.Value, p.Key);
+                revIn.Add(p.Value, p.Key);
 
+            var revOut = new Dictionary<PacketTypesOut, int>();
             foreach (var p in GetListOut())
-                reverseMappingOut.Add(p.Value, p.Key);
+                revOut.Add(p.Value, p.Key);
 
+            var revConfigIn = new Dictionary<ConfigurationPacketTypesIn, int>();
             foreach (var p in GetConfigurationListIn())
-                configurationReverseMappingIn.Add(p.Value, p.Key);
+                revConfigIn.Add(p.Value, p.Key);
 
+            var revConfigOut = new Dictionary<ConfigurationPacketTypesOut, int>();
             foreach (var p in GetConfigurationListOut())
-                configurationReverseMappingOut.Add(p.Value, p.Key);
+                revConfigOut.Add(p.Value, p.Key);
+
+            reverseMappingIn = revIn.ToFrozenDictionary();
+            reverseMappingOut = revOut.ToFrozenDictionary();
+            configurationReverseMappingIn = revConfigIn.ToFrozenDictionary();
+            configurationReverseMappingOut = revConfigOut.ToFrozenDictionary();
         }
 
         /// <summary>
@@ -62,7 +84,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
         /// <returns>Packet type</returns>
         public PacketTypesIn GetIncomingTypeById(int packetId)
         {
-            if (GetListIn().TryGetValue(packetId, out var p))
+            if (frozenListIn.TryGetValue(packetId, out var p))
             {
                 return p;
             }
@@ -90,7 +112,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
         /// <returns>Packet type</returns>
         public ConfigurationPacketTypesIn GetIncomingConfigurationTypeById(int packetId)
         {
-            if (GetConfigurationListIn().TryGetValue(packetId, out var p))
+            if (frozenConfigListIn.TryGetValue(packetId, out var p))
             {
                 return p;
             }
@@ -120,7 +142,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
         /// <returns>Packet type</returns>
         public PacketTypesOut GetOutgoingTypeById(int packetId)
         {
-            if (GetListOut().TryGetValue(packetId, out var p))
+            if (frozenListOut.TryGetValue(packetId, out var p))
             {
                 return p;
             }
@@ -148,7 +170,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
         /// <returns>Packet type</returns>
         public ConfigurationPacketTypesOut GetOutgoingConfigurationTypeById(int packetId)
         {
-            if (GetConfigurationListOut().TryGetValue(packetId, out var p))
+            if (frozenConfigListOut.TryGetValue(packetId, out var p))
             {
                 return p;
             }
