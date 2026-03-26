@@ -371,6 +371,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// </summary>
         /// <param name="cache">Cache of bytes to read from</param>
         /// <returns>The long value</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public long ReadNextVarLong(Queue<byte> cache)
         {
             int numRead = 0;
@@ -378,7 +379,7 @@ namespace MinecraftClient.Protocol.Handlers
             byte read;
             do
             {
-                read = ReadNextByte(cache);
+                read = cache.Dequeue();
                 long value = (read & 0x7F);
                 result |= (value << (7 * numRead));
 
