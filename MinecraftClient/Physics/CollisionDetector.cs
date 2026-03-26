@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using MinecraftClient.Mapping;
 
 namespace MinecraftClient.Physics
@@ -10,6 +11,17 @@ namespace MinecraftClient.Physics
     /// </summary>
     public static class CollisionDetector
     {
+        // Pre-allocated axis order arrays to avoid allocating int[] on every call.
+        private static readonly int[] AxisOrder_YZX = [1, 2, 0];
+        private static readonly int[] AxisOrder_YXZ = [1, 0, 2];
+        private static readonly int[] AxisOrder_XYZ = [0, 1, 2];
+        private static readonly int[] AxisOrder_ZYX = [2, 1, 0];
+
+        // Thread-local reusable buffers for collision detection to avoid per-call allocations.
+        // Safe because physics runs on a single thread per client.
+        [ThreadStatic] private static List<Aabb>? t_colliderBuf;
+        [ThreadStatic] private static List<Aabb>? t_stepColliderBuf;
+        [ThreadStatic] private static List<float>? t_heightBuf;
         /// <summary>
         /// Resolve movement with full collision detection including step-up.
         /// This is the main entry point, equivalent to Entity.collide(Vec3).
@@ -19,8 +31,10 @@ namespace MinecraftClient.Physics
             if (movement.LengthSqr() == 0.0)
                 return movement;
 
-            // Collect block collision shapes in the movement path
-            var colliders = CollectBlockColliders(world, entityBox.ExpandTowards(movement));
+            // Collect block collision shapes in the movement path (reuses thread-local buffer)
+            var colliders = t_colliderBuf ??= new List<Aabb>(64);
+            colliders.Clear();
+            CollectBlockColliders(world, entityBox.ExpandTowards(movement), colliders);
             Vec3d resolved = CollideWithShapes(movement, entityBox, colliders);
 
             bool blockedX = movement.X != resolved.X;
@@ -36,14 +50,18 @@ namespace MinecraftClient.Physics
                 Aabb expanded = stepBase.ExpandTowards(movement.X, maxUpStep, movement.Z)
                     .ExpandTowards(0, hitGroundDuringMove ? 0 : -1.0E-5, 0);
 
-                var stepColliders = CollectBlockColliders(world, expanded);
+                var stepColliders = t_stepColliderBuf ??= new List<Aabb>(64);
+                stepColliders.Clear();
+                CollectBlockColliders(world, expanded, stepColliders);
 
-                // Try various step heights
-                float[] candidateHeights = CollectCandidateStepHeights(stepBase, stepColliders, maxUpStep, (float)resolved.Y);
+                // Try various step heights (uses stackalloc-friendly approach)
+                var heightBuf = t_heightBuf ??= new List<float>(8);
+                heightBuf.Clear();
+                CollectCandidateStepHeights(stepBase, stepColliders, maxUpStep, (float)resolved.Y, heightBuf);
 
-                foreach (float stepY in candidateHeights)
+                for (int i = 0; i < heightBuf.Count; i++)
                 {
-                    Vec3d stepMovement = new Vec3d(movement.X, stepY, movement.Z);
+                    Vec3d stepMovement = new Vec3d(movement.X, heightBuf[i], movement.Z);
                     Vec3d stepResolved = CollideWithShapes(stepMovement, stepBase, stepColliders);
 
                     if (stepResolved.HorizontalDistanceSqr() > resolved.HorizontalDistanceSqr())
@@ -84,6 +102,7 @@ namespace MinecraftClient.Physics
         /// <summary>
         /// Get axis processing order: Y first if moving down, otherwise smallest absolute movement first.
         /// Vanilla uses Direction.axisStepOrder(Vec3) which returns axes sorted by absolute movement.
+        /// Returns a cached array - callers must not modify the result.
         /// </summary>
         private static int[] GetAxisStepOrder(Vec3d movement)
         {
@@ -94,18 +113,18 @@ namespace MinecraftClient.Physics
             if (absX > absZ)
             {
                 if (absZ > absY)
-                    return new[] { 1, 2, 0 }; // Y Z X
+                    return AxisOrder_YZX; // Y Z X
                 if (absX > absY)
-                    return new[] { 1, 0, 2 }; // Y X Z
-                return new[] { 0, 1, 2 }; // X Y Z
+                    return AxisOrder_YXZ; // Y X Z
+                return AxisOrder_XYZ; // X Y Z
             }
             else
             {
                 if (absX > absY)
-                    return new[] { 1, 0, 2 }; // Y X Z
+                    return AxisOrder_YXZ; // Y X Z
                 if (absZ > absY)
-                    return new[] { 1, 2, 0 }; // Y Z X
-                return new[] { 2, 1, 0 }; // Z Y X
+                    return AxisOrder_YZX; // Y Z X
+                return AxisOrder_ZYX; // Z Y X
             }
         }
 
@@ -127,10 +146,21 @@ namespace MinecraftClient.Physics
         /// <summary>
         /// Collect all block collision AABBs that overlap the given search area.
         /// Equivalent to BlockCollisions iterator in vanilla.
+        /// Returns a new list (used by external callers like IsOnGround, NoCollision).
         /// </summary>
         public static List<Aabb> CollectBlockColliders(World world, Aabb searchBox)
         {
             var result = new List<Aabb>();
+            CollectBlockColliders(world, searchBox, result);
+            return result;
+        }
+
+        /// <summary>
+        /// Collect all block collision AABBs into an existing list (avoids allocation on hot paths).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public static void CollectBlockColliders(World world, Aabb searchBox, List<Aabb> result)
+        {
 
             int minBX = (int)Math.Floor(searchBox.MinX - PhysicsConsts.CollisionEpsilon) - 1;
             int maxBX = (int)Math.Floor(searchBox.MaxX + PhysicsConsts.CollisionEpsilon) + 1;
@@ -157,48 +187,90 @@ namespace MinecraftClient.Physics
                     }
                 }
             }
-
-            return result;
         }
 
         /// <summary>
-        /// Collect candidate step-up heights, matching Entity.collectCandidateStepUpHeights().
-        /// Returns sorted distinct step heights between current resolved Y and maxUpStep.
+        /// Collect candidate step-up heights into an existing list.
+        /// Produces sorted distinct step heights between current resolved Y and maxUpStep.
+        /// Always includes maxUpStep as a candidate.
         /// </summary>
-        private static float[] CollectCandidateStepHeights(Aabb stepBase, List<Aabb> colliders, float maxUpStep, float currentY)
+        private static void CollectCandidateStepHeights(Aabb stepBase, List<Aabb> colliders, float maxUpStep, float currentY, List<float> heights)
         {
-            var heights = new SortedSet<float>();
-
-            foreach (var collider in colliders)
+            for (int i = 0; i < colliders.Count; i++)
             {
-                float h = (float)(collider.MaxY - stepBase.MinY);
+                float h = (float)(colliders[i].MaxY - stepBase.MinY);
                 if (h > currentY && h <= maxUpStep)
-                    heights.Add(h);
+                {
+                    // Insert-sorted, skip duplicates
+                    int insertIdx = heights.Count;
+                    bool duplicate = false;
+                    for (int j = 0; j < heights.Count; j++)
+                    {
+                        if (heights[j] == h) { duplicate = true; break; }
+                        if (heights[j] > h) { insertIdx = j; break; }
+                    }
+                    if (!duplicate)
+                        heights.Insert(insertIdx, h);
+                }
             }
 
             if (heights.Count == 0)
-                return new[] { maxUpStep };
-
-            var result = new float[heights.Count];
-            heights.CopyTo(result);
-            return result;
+                heights.Add(maxUpStep);
         }
 
         /// <summary>
         /// Check if a position is on ground by testing for vertical collision below.
+        /// Uses early exit to avoid materializing the full collider list.
         /// </summary>
         public static bool IsOnGround(World world, Aabb entityBox)
         {
             Aabb testBox = entityBox.ExpandTowards(0, -0.06, 0);
-            return CollectBlockColliders(world, testBox).Count > 0;
+            return HasAnyBlockCollider(world, testBox);
         }
 
         /// <summary>
         /// Check if a given position has no collision (for checking if player fits somewhere).
+        /// Uses early exit to avoid materializing the full collider list.
         /// </summary>
         public static bool NoCollision(World world, Aabb entityBox)
         {
-            return CollectBlockColliders(world, entityBox).Count == 0;
+            return !HasAnyBlockCollider(world, entityBox);
+        }
+
+        /// <summary>
+        /// Returns true as soon as any block collider intersects the search box.
+        /// Avoids allocating a list just to check Count > 0.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        private static bool HasAnyBlockCollider(World world, Aabb searchBox)
+        {
+            int minBX = (int)Math.Floor(searchBox.MinX - PhysicsConsts.CollisionEpsilon) - 1;
+            int maxBX = (int)Math.Floor(searchBox.MaxX + PhysicsConsts.CollisionEpsilon) + 1;
+            int minBY = (int)Math.Floor(searchBox.MinY - PhysicsConsts.CollisionEpsilon) - 1;
+            int maxBY = (int)Math.Floor(searchBox.MaxY + PhysicsConsts.CollisionEpsilon) + 1;
+            int minBZ = (int)Math.Floor(searchBox.MinZ - PhysicsConsts.CollisionEpsilon) - 1;
+            int maxBZ = (int)Math.Floor(searchBox.MaxZ + PhysicsConsts.CollisionEpsilon) + 1;
+
+            for (int bx = minBX; bx <= maxBX; bx++)
+            {
+                for (int bz = minBZ; bz <= maxBZ; bz++)
+                {
+                    for (int by = minBY; by <= maxBY; by++)
+                    {
+                        Block block = world.GetBlock(new Location(bx, by, bz));
+                        Aabb[] shapes = BlockShapes.GetShapes(block);
+
+                        foreach (var shape in shapes)
+                        {
+                            Aabb worldShape = shape.Move(bx, by, bz);
+                            if (worldShape.Intersects(searchBox))
+                                return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
     }
 }
