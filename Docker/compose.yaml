@@ -1,0 +1,15 @@
+services:
+  mcc:
+    image: minecraft-console-client:latest
+    container_name: MinecraftConsoleClient
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile
+    volumes:
+      - ./data:/app/data
+    environment:
+      - MCC_PLATFORM=linux-x64
+      - MCC_SKIP_REDOWNLOAD=1
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

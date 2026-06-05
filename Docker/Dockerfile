@@ -1,20 +1,30 @@
-# Using the .NET official image for .NET 6.0
-FROM mcr.microsoft.com/dotnet/sdk:6.0
+# syntax=docker/dockerfile:1
 
-# If you want to use a specific build, un-comment the ENV MCC_VERSION line (remove the # from the start)
-# Then replace the <version> with a version of your choice (Example: MCC_VERSION=20220817-29)
-#ENV MCC_VERSION=<version>
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
 
-# IF you want to use a specific platform then specific the ENV MCC_PLATFORM
-# For example to use arm set the environment variable: MCC_PLATFORM=linux-arm64
-# `docker run -e MCC_PLATFORM=linux-arm64 -it localhost/minecraft-console-client`
+# Copy source
+COPY . .
 
-# Copy over the script and give it execution permissions
-COPY start-latest.sh /opt/start-latest.sh
-RUN chmod +x /opt/start-latest.sh
+# Restore and publish
+RUN dotnet restore MinecraftClient/MinecraftClient.csproj -r linux-x64
+RUN dotnet publish MinecraftClient/MinecraftClient.csproj -c Release -r linux-x64 -o /app/publish --no-restore
 
-RUN apt-get update && \ 
-    apt-get install -y unzip && \
-    mkdir /opt/data
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
+WORKDIR /app
 
-ENTRYPOINT ["/bin/sh", "-c", "/opt/start-latest.sh"]
+# Create non-root user (handle existing GID 1000)
+RUN groupadd -g 1000 appgroup 2>/dev/null || groupadd appgroup && \
+    useradd -u 1000 -g appgroup -s /bin/bash -m appuser 2>/dev/null || useradd -g appgroup -s /bin/bash -m appuser
+
+# Copy published app
+COPY --from=build /app/publish .
+
+# Set ownership and user
+RUN chown -R appuser:appgroup /app
+USER appuser
+
+# Entry point (PublishSingleFile=true creates native executable)
+ENTRYPOINT ["./MinecraftClient"]

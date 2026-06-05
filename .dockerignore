@@ -1,0 +1,58 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# Version control
+**/.git/
+**/.gitignore
+**/.gitmodules
+
+# IDE and editor files
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.swp
+**/*.swo
+
+# Docker files
+**/Dockerfile*
+**/.dockerignore
+**/docker-compose*.yml
+**/compose.yaml
+
+# Documentation (but keep embedded resources)
+**/*.md
+!**/Mcp/**/*.md
+!**/Tui/**/*.md
+**/docs/
+LICENSE
+
+# Configuration
+**/*.ini
+**/*.config
+**/appsettings.*.json
+
+# Logs
+**/logs/
+*.log
+
+# MinecraftOfficial (large decompiled sources)
+**/MinecraftOfficial/
+
+# DebugTools
+**/DebugTools/
+
+# GUI wrapper
+**/MinecraftClientGUI/
+
+# Tools
+**/tools/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Rider/IntelliJ
+*.sln.DotSettings.user
+*.suo
