@@ -3873,7 +3873,9 @@ namespace MinecraftClient
         {
             if (inventories.ContainsKey(inventoryID))
             {
-                inventories[inventoryID].Items = itemList;
+                inventories[inventoryID].Items = itemList
+                    .Where(slot => !slot.Value.IsEmpty)
+                    .ToDictionary(slot => slot.Key, slot => slot.Value);
                 inventories[inventoryID].StateID = stateId;
                 bool playerInventoryChanged = SyncPlayerInventorySlotsFromWindow(inventories[inventoryID]);
                 if (playerInventoryChanged)
