@@ -129,6 +129,8 @@ namespace MinecraftClient
                 args = args.Where(o => !Object.ReferenceEquals(o, args[^1])).ToArray();
             }
 
+            WindowsConsoleMode.DisableQuickEdit();
+
             //Debug input ?
             if (args.Length == 1 && args[0] == "--keyboard-debug")
             {
