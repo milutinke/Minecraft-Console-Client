@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace MinecraftClient
@@ -97,7 +98,28 @@ namespace MinecraftClient
 
         public void WriteLineFormatted(string text)
         {
-            ConsoleInteractive.ConsoleWriter.WriteLineFormatted(ResolveHexColors(text));
+            try
+            {
+                ConsoleInteractive.ConsoleWriter.WriteLineFormatted(ResolveHexColors(text));
+            }
+            finally
+            {
+                ResetConsoleColor();
+            }
+        }
+
+        private static void ResetConsoleColor()
+        {
+            try
+            {
+                Console.ResetColor();
+            }
+            catch (IOException)
+            {
+            }
+            catch (PlatformNotSupportedException)
+            {
+            }
         }
 
         public void BeginReadThread()
