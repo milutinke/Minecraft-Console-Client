@@ -26,6 +26,8 @@ public sealed class MccBlockStateSnapshot
     public required string TypeLabel { get; init; }
     public required int BlockId { get; init; }
     public required int BlockMeta { get; init; }
+    public required int StateId { get; init; }
+    public required IReadOnlyDictionary<string, string> Properties { get; init; }
 }
 
 /// <summary>
@@ -143,7 +145,9 @@ public static class MccGameCommon
             Material = block.Type.ToString(),
             TypeLabel = block.GetTypeString(),
             BlockId = block.BlockId,
-            BlockMeta = block.BlockMeta
+            BlockMeta = block.BlockMeta,
+            StateId = block.StateId,
+            Properties = block.GetStateProperties()
         };
     }
 
