@@ -89,6 +89,14 @@ namespace MinecraftClient.Mapping
         /// </summary>
         public IReadOnlyDictionary<string, string> GetStateProperties()
         {
+            if (Palette.IdHasMetadata)
+            {
+                return new Dictionary<string, string>
+                {
+                    ["metadata"] = BlockMeta.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                };
+            }
+
             return Palette.GetStateProperties(StateId);
         }
 
