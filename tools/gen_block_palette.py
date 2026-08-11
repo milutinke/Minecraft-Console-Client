@@ -14,6 +14,7 @@ Example:
 """
 
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -40,6 +41,54 @@ def load_known_materials() -> set[str]:
     return known
 
 
+def get_state_property_definitions(
+    block_key: str,
+    states: list[dict],
+    properties: dict[str, list[str]],
+) -> list[tuple[str, list[str], int]]:
+    """Build and verify the compact stride schema against every reported state."""
+    if not properties:
+        return []
+
+    ordered_states = sorted(states, key=lambda state: state["id"])
+    first_state_id = ordered_states[0]["id"]
+    expected_ids = list(range(first_state_id, first_state_id + len(ordered_states)))
+    actual_ids = [state["id"] for state in ordered_states]
+    if actual_ids != expected_ids:
+        raise ValueError(f"{block_key} has non-contiguous state IDs")
+
+    expected_count = math.prod(len(values) for values in properties.values())
+    if expected_count != len(ordered_states):
+        raise ValueError(
+            f"{block_key} has {len(ordered_states)} states but its properties describe {expected_count} combinations"
+        )
+
+    definitions = []
+    for name, values in properties.items():
+        stride = next(
+            (
+                candidate
+                for candidate in range(1, len(ordered_states) + 1)
+                if all(
+                    state.get("properties", {}).get(name)
+                    == values[(offset // candidate) % len(values)]
+                    for offset, state in enumerate(ordered_states)
+                )
+            ),
+            None,
+        )
+        if stride is None:
+            raise ValueError(f"{block_key} property {name} has no regular state stride")
+        definitions.append((name, values, stride))
+
+    return definitions
+
+
+def csharp_string(value: str) -> str:
+    """Encode a Python string as a compatible C# string literal."""
+    return json.dumps(value, ensure_ascii=False)
+
+
 def main():
     if len(sys.argv) != 3:
         print(__doc__)
@@ -55,14 +104,15 @@ def main():
     with open(blocks_json) as f:
         data = json.load(f)
 
-    # Build (min_state, max_state, cs_name) for each block, sorted by min_state
+    # Build block ranges and compact state-property definitions, sorted by min state.
     block_ranges = []
     for block_key, block_info in data.items():
         cs_name = mc_name_to_csharp(block_key)
         states = block_info.get("states", [])
         state_ids = [s["id"] for s in states]
         if state_ids:
-            block_ranges.append((min(state_ids), max(state_ids), cs_name))
+            properties = get_state_property_definitions(block_key, states, block_info.get("properties", {}))
+            block_ranges.append((min(state_ids), max(state_ids), cs_name, properties))
 
     block_ranges.sort(key=lambda x: x[0])
     print(f"Loaded {len(block_ranges)} blocks from {blocks_json}")
@@ -71,7 +121,7 @@ def main():
     print(f"State ID range: 0 - {max_state}")
 
     known_materials = load_known_materials()
-    missing = [cs for _, _, cs in block_ranges if known_materials and cs not in known_materials]
+    missing = [cs for _, _, cs, _ in block_ranges if known_materials and cs not in known_materials]
     if missing:
         print(f"\nWARNING: {len(missing)} blocks not found in Material.cs enum:")
         for cs_name in missing:
@@ -95,16 +145,43 @@ def main():
         "        {",
     ]
 
-    for min_s, max_s, cs_name in block_ranges:
+    for min_s, max_s, cs_name, _ in block_ranges:
         lines.append(f"            for (int i = {min_s}; i <= {max_s}; i++)")
         lines.append(f"                materials[i] = Material.{cs_name};")
 
     lines += [
         "        }",
         "",
+        "        private static readonly BlockStateDefinition[] stateDefinitions =",
+        "        [",
+    ]
+
+    property_definition_count = 0
+    for min_s, max_s, _, properties in block_ranges:
+        if not properties:
+            continue
+
+        property_definition_count += 1
+        lines.append(f"            new({min_s}, {max_s - min_s + 1},")
+        lines.append("            [")
+        property_items = properties
+        for index, (name, values, stride) in enumerate(property_items):
+            encoded_values = ", ".join(csharp_string(value) for value in values)
+            suffix = "," if index < len(property_items) - 1 else ""
+            lines.append(f"                new({csharp_string(name)}, [{encoded_values}], {stride}){suffix}")
+        lines.append("            ]),")
+
+    lines += [
+        "        ];",
+        "",
         "        protected override Dictionary<int, Material> GetDict()",
         "        {",
         "            return materials;",
+        "        }",
+        "",
+        "        protected override BlockStateDefinition[] GetStateDefinitions()",
+        "        {",
+        "            return stateDefinitions;",
         "        }",
         "    }",
         "}",
@@ -112,7 +189,10 @@ def main():
     ]
 
     output_path.write_text("\n".join(lines))
-    print(f"Generated {output_path} with {len(block_ranges)} blocks ({max_state + 1} total states)")
+    print(
+        f"Generated {output_path} with {len(block_ranges)} blocks, "
+        f"{max_state + 1} total states, and {property_definition_count} property definitions"
+    )
 
 
 if __name__ == "__main__":

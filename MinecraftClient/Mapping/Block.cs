@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using MinecraftClient.Mapping.BlockPalettes;
 using MinecraftClient.Protocol.Message;
@@ -76,6 +77,19 @@ namespace MinecraftClient.Mapping
                     blockIdAndMeta = (ushort)((blockIdAndMeta & ~0x0F) | (value & 0x0F));
                 }
             }
+        }
+
+        /// <summary>
+        /// Exact raw block state ID. For Minecraft 1.12 and older this contains the packed block ID and metadata.
+        /// </summary>
+        public int StateId => blockIdAndMeta;
+
+        /// <summary>
+        /// Get the properties associated with this block's exact state ID.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> GetStateProperties()
+        {
+            return Palette.GetStateProperties(StateId);
         }
 
         /// <summary>

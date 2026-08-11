@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace MinecraftClient.Mapping.BlockPalettes
 {
@@ -21,6 +22,46 @@ namespace MinecraftClient.Mapping.BlockPalettes
             if (materials.ContainsKey(id))
                 return materials[id];
             return Material.Air;
+        }
+
+        /// <summary>
+        /// Get block-state properties for a modern block state ID.
+        /// </summary>
+        /// <param name="stateId">Raw block state ID.</param>
+        /// <returns>Block-state property names and values, or an empty map when unavailable.</returns>
+        public IReadOnlyDictionary<string, string> GetStateProperties(int stateId)
+        {
+            BlockStateDefinition[] definitions = GetStateDefinitions();
+            int low = 0;
+            int high = definitions.Length - 1;
+
+            while (low <= high)
+            {
+                int middle = low + ((high - low) / 2);
+                BlockStateDefinition definition = definitions[middle];
+                if (stateId < definition.FirstStateId)
+                {
+                    high = middle - 1;
+                }
+                else if (stateId > definition.LastStateId)
+                {
+                    low = middle + 1;
+                }
+                else
+                {
+                    return definition.GetProperties(stateId);
+                }
+            }
+
+            return BlockStateDefinition.EmptyProperties;
+        }
+
+        /// <summary>
+        /// Get compact block-state definitions sorted by their first state ID.
+        /// </summary>
+        protected virtual BlockStateDefinition[] GetStateDefinitions()
+        {
+            return Array.Empty<BlockStateDefinition>();
         }
 
         /// <summary>
