@@ -5721,6 +5721,13 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 List<byte> fields = new();
                 fields.AddRange(DataTypes.GetVarInt(EntityID));
+
+                if (protocolVersion >= MC_26_1_Version && type == (int)InteractType.Attack)
+                {
+                    SendPacket(PacketTypesOut.Attack, fields);
+                    return true;
+                }
+
                 fields.AddRange(DataTypes.GetVarInt(type));
 
                 // Is player Sneaking (Only 1.16 and above)
