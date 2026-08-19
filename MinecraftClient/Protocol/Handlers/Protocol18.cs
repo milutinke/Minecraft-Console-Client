@@ -4101,6 +4101,7 @@ namespace MinecraftClient.Protocol.Handlers
                 finally
                 {
                     socketWrapper.Disconnect();
+                    McClient.Instance?.DeleteAllCookies();
                 }
             }
         }
@@ -6685,8 +6686,6 @@ namespace MinecraftClient.Protocol.Handlers
                         SendPacket(PacketTypesOut.CookieResponse, packet);
                         break;
                 }
-
-                McClient.Instance?.DeleteCookie(name);
                 return true;
             }
             catch (SocketException)
