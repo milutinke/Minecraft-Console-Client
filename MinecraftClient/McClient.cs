@@ -210,6 +210,7 @@ namespace MinecraftClient
         public void GetCookie(string key, out byte[]? data) => Cookies.TryGetValue(key, out data);
         public void SetCookie(string key, byte[] data) => Cookies[key] = data;
         public void DeleteCookie(string key) => Cookies.Remove(key, out var data);
+        public void DeleteAllCookies() => Cookies?.Clear();
         public (Location location, string material, string typeLabel, string[] frontText, string[] backText, bool isWaxed)[] GetKnownSigns()
         {
             lock (signDataLock)
