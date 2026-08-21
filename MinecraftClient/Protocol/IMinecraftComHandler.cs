@@ -48,6 +48,7 @@ namespace MinecraftClient.Protocol
         void GetCookie(string key, out byte[]? data);
         void SetCookie(string key, byte[] data);
         void DeleteCookie(string key);
+        void DeleteAllCookies();
 
         void Transfer(string newHost, int newPort);
 
