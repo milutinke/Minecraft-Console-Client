@@ -442,6 +442,9 @@ namespace MinecraftClient
 
                 ResetStateForTransfer();
 
+                // Snapshot cookies before Dispose clears them
+                Dictionary<string, byte[]> savedCookies = new Dictionary<string, byte[]>(Cookies);
+
                 // Retire the old handler so its updater exits without reporting a stale disconnect.
                 oldHandler.Dispose();
                 oldClient.Close();
@@ -457,6 +460,7 @@ namespace MinecraftClient
 
                 // Reinitialize the protocol handler
                 handler = Protocol.ProtocolHandler.GetProtocolHandler(client, protocolversion, null, this);
+                Cookies = savedCookies;                   // Restore cookies for the new connection before login
                 Log.Info($"Connected to {resolvedHost}:{resolvedPort}");
 
                 // Retry login process
