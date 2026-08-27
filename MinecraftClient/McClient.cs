@@ -436,6 +436,12 @@ namespace MinecraftClient
                 ResolveTransferAddress(ref resolvedHost, ref resolvedPort);
                 Log.Info($"Initiating a transfer to: {resolvedHost}:{resolvedPort}");
 
+                // Backup current bots before unloading, so they can be restored after successful transfer.
+                if (botsOnHold.Count == 0 && bots.Count > 0)
+                {
+                    botsOnHold.AddRange(bots.Where(bot => bot.ScriptOwnerKey is null)); // 保持一致过滤
+                }
+
                 // Unload bots
                 UnloadAllBots();
                 bots.Clear();
