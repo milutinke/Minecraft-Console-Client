@@ -3504,7 +3504,16 @@ namespace MinecraftClient.Protocol.Handlers
 
                 case PacketTypesIn.RecipeBookAdd:
                     if (protocolVersion >= MC_1_21_2_Version)
-                        HandleRecipeBookAdd(packetData);
+                    {
+                        try
+                        {
+                            HandleRecipeBookAdd(packetData);
+                        }
+                        catch
+                        {
+                            // Ignore this packet due to oversized VarInt from anti-MCC server
+                        }
+                    }
                     break;
                 case PacketTypesIn.RecipeBookRemove:
                     if (protocolVersion >= MC_1_21_2_Version)
