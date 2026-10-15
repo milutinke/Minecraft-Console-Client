@@ -30,7 +30,7 @@ Type these lines inside MCC. Replace names, coordinates, IDs, and paths with val
 
 The bare command targets the looked-at block. The coordinate form targets a specific block. Terrain data, reach, game mode, selected tool, and protection rules affect success.
 
-The command starts mining and returns control so you can enter other commands. Use `/dig stop` to release the attack. Unbreakable blocks keep the attack held until you stop it or the server removes the target. Caller cancellation and session shutdown also end it.
+The command starts mining and returns control so you can enter other commands. Use `/dig stop` to release the attack. Unbreakable blocks keep the attack held until you stop it or the server removes the target. Looking away from the original block or moving it out of reach also releases the attack. Another block under the view does not replace the requested target. Caller cancellation and session shutdown also end it.
 
 MCC attempts a real server interaction. It does not directly edit the local world snapshot to claim that the block broke.
 
