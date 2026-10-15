@@ -32,6 +32,8 @@ The bare command targets the looked-at block. The coordinate form targets a spec
 
 The command starts mining and returns control so you can enter other commands. Use `/dig stop` to release the attack. Unbreakable blocks keep the attack held until you stop it or the server removes the target. Looking away from the original block or moving it out of reach also releases the attack. Another block under the view does not replace the requested target. Caller cancellation and session shutdown also end it.
 
+From Minecraft 1.21.11, piercing weapons follow their charged attack behavior. Holding the attack does not repeatedly mine the block. Switching to a regular tool allows ordinary mining to resume. The stop command releases the held input; vanilla can defer the mining-stop packet while a piercing weapon remains equipped.
+
 MCC attempts a real server interaction. It does not directly edit the local world snapshot to claim that the block broke.
 
 Declared game features: Terrain. Some forms also need a current game session or a compatible menu.
